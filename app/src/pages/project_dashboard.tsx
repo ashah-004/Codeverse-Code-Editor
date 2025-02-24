@@ -1,53 +1,158 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/button";
-import { Card, CardContent } from "../components/card";
+import Grid from "@mui/material/Grid2";
+import {
+  AppBar,
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardMedia,
+
+  Toolbar,
+  Typography,
+} from "@mui/material";
+import CodeIcon from "@mui/icons-material/Code";
+import ProjectForm from "./project_form";
+import axios from "axios";
+
+export type Project = {
+  _id: string;
+  project_name: string;
+  description: string;
+  language: string;
+  code: string;
+};
 
 const ProjectDashboard = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState([
-    { name: "python-project", description: "Python Project", language: "python" },
-    {
-      name: "javascript-project",
-      description: "JavaScript Project",
-      language: "javascript",
-    },
-  ]);
+  const pythonImage = require("../assets/python.jpeg");
+  const cppImage = require("../assets/cpp.jpeg");
+  const jsImage = require("../assets/js.png");
 
-  const handleCreateProject = () => {
-    navigate("/create-project");
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  const [open, setOpen] = React.useState(false);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/projects");
+      setProjects(response.data.projects);
+    } catch (error) {
+      console.error("Error fetching projects", error);
+    }
   };
 
-  const openProject = (project: {
-    name: string;
-    description?: string;
-    language?: string;
-  }) => {
-    navigate(`/editor/${project.name}`, { state: project });
+  useEffect(() => {
+    if (projects.length === 0) {
+      fetchProjects();
+    }
+  });
+
+  const openProject = (project: Project) => {
+    navigate(`/editor/${project._id}`);
+  };
+
+  const handleImage = (language: string) => {
+    switch (language) {
+      case "python":
+        return pythonImage;
+      case "cpp":
+        return cppImage;
+      case "javascript":
+        return jsImage;
+      default:
+        break;
+    }
   };
 
   return (
-    <div className="flex flex-col w-full p-6">
-      {/* Top Bar */}
-      <div className="flex justify-between items-center pb-4 border-b">
-        <h1 className="text-2xl font-bold">Your Projects</h1>
-        <Button onClick={handleCreateProject}>+ Create Project</Button>
-      </div>
-
-      {/* Projects List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {projects.map((project, index) => (
-          <div onClick={() => openProject(project)}>
-            <Card key={index} className="cursor-pointer">
-              <CardContent>
-                <h2 className="text-lg font-semibold">{project.name}</h2>
-                <p className="text-sm text-gray-500">{project.description}</p>
-              </CardContent>
-            </Card>
-          </div>
-        ))}
-      </div>
-    </div>
+    <>
+      <Grid container spacing={3}>
+        <Grid size={12}>
+          <AppBar elevation={0} position="fixed" sx={{ bgcolor: "#100c08" }}>
+            <Toolbar>
+              <div
+                onClick={() => navigate("/")}
+                style={{
+                  flexGrow: 1,
+                  marginLeft: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                }}
+              >
+                <CodeIcon fontSize="large" />
+                <Typography variant="h6">CodeVerse</Typography>
+              </div>
+              <Button
+                disableRipple
+                variant="contained"
+                sx={{ bgcolor: "#0440de" }}
+                onClick={() => setOpen(true)}
+              >
+                Create Project
+              </Button>
+            </Toolbar>
+          </AppBar>
+        </Grid>
+        <Grid size={12} marginTop={8}>
+          <Grid container direction={"row"} spacing={3} marginBottom={3}>
+            {projects.map((project, index) => (
+              <Grid size={4} key={index}>
+                <Box
+                  display={"flex"}
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                >
+                  <Card variant="elevation" sx={{ maxWidth: 275 }}>
+                    <CardMedia
+                      sx={{ height: 120 }}
+                      image={handleImage(project.language)}
+                      title="python"
+                    />
+                    <CardContent>
+                      <Typography
+                        color="#0440de"
+                        gutterBottom
+                        variant="h6"
+                        component="div"
+                      >
+                        {project.project_name}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "text.secondary" }}
+                      >
+                        {project.description}
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button
+                        sx={{
+                          "&:hover": {
+                            backgroundColor: "transparent",
+                          },
+                          color: "#0440de",
+                        }}
+                        disableRipple
+                        size="small"
+                        onClick={() => openProject(project)}
+                      >
+                        Open Project
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Grid>
+      </Grid>
+      <ProjectForm open={open} onOpen={() => setOpen(false)} />
+    </>
   );
 };
 
