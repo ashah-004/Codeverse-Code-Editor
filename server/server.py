@@ -49,7 +49,6 @@ FILE_EXTENSIONS = {
     "python": ".py",
     "cpp": ".cpp",
     "javascript": ".js",
-    "react": ".js",  # React files usually use .js
 }
 
 # Execution limits
