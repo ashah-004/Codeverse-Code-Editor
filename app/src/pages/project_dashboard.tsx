@@ -9,13 +9,21 @@ import {
   CardActions,
   CardContent,
   CardMedia,
-
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Slide,
   Toolbar,
   Typography,
 } from "@mui/material";
 import CodeIcon from "@mui/icons-material/Code";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ProjectForm from "./project_form";
 import axios from "axios";
+import { TransitionProps } from "@mui/material/transitions";
 
 export type Project = {
   _id: string;
@@ -25,15 +33,31 @@ export type Project = {
   code: string;
 };
 
+const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & {
+    children: React.ReactElement<any, any>;
+  },
+  ref: React.Ref<unknown>
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 const ProjectDashboard = () => {
   const navigate = useNavigate();
   const pythonImage = require("../assets/python.jpeg");
   const cppImage = require("../assets/cpp.jpeg");
   const jsImage = require("../assets/js.png");
 
+  const CreateProject = require("../assets/website-maintenance.png");
+
   const [projects, setProjects] = useState<Project[]>([]);
 
   const [open, setOpen] = React.useState(false);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+
+  const [projectDeletionId, setProjectDeletionId] = useState<string | null>(
+    null
+  );
 
   const fetchProjects = async () => {
     try {
@@ -41,6 +65,22 @@ const ProjectDashboard = () => {
       setProjects(response.data.projects);
     } catch (error) {
       console.error("Error fetching projects", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!projectDeletionId) return;
+
+    try {
+      await axios.delete(
+        `http://localhost:8000/project/${projectDeletionId}/delete`
+      );
+      fetchProjects();
+      setProjectDeletionId(null);
+      setOpenDialog(false);
+    } catch (error) {
+      console.error("Error deleting project", error);
+      alert("Failed to delete project.");
     }
   };
 
@@ -100,58 +140,121 @@ const ProjectDashboard = () => {
         </Grid>
         <Grid size={12} marginTop={8}>
           <Grid container direction={"row"} spacing={3} marginBottom={3}>
-            {projects.map((project, index) => (
-              <Grid size={4} key={index}>
-                <Box
-                  display={"flex"}
-                  justifyContent={"center"}
-                  alignItems={"center"}
-                >
-                  <Card variant="elevation" sx={{ maxWidth: 275 }}>
-                    <CardMedia
-                      sx={{ height: 120 }}
-                      image={handleImage(project.language)}
-                      title="python"
-                    />
-                    <CardContent>
-                      <Typography
-                        color="#0440de"
-                        gutterBottom
-                        variant="h6"
-                        component="div"
-                      >
-                        {project.project_name}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "text.secondary" }}
-                      >
-                        {project.description}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        sx={{
-                          "&:hover": {
-                            backgroundColor: "transparent",
-                          },
-                          color: "#0440de",
-                        }}
-                        disableRipple
-                        size="small"
-                        onClick={() => openProject(project)}
-                      >
-                        Open Project
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Box>
-              </Grid>
-            ))}
+            {projects.length > 0 ? (
+              projects.map((project, index) => (
+                <Grid size={4} key={index}>
+                  <Box
+                    display={"flex"}
+                    justifyContent={"center"}
+                    alignItems={"center"}
+                  >
+                    <Card variant="elevation" sx={{ maxWidth: 275 }}>
+                      <CardMedia
+                        sx={{ height: 120 }}
+                        image={handleImage(project.language)}
+                        title="python"
+                      />
+                      <CardContent>
+                        <Typography
+                          color="#0440de"
+                          gutterBottom
+                          variant="h6"
+                          component="div"
+                        >
+                          {project.project_name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary" }}
+                        >
+                          {project.description}
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Box
+                          display={"flex"}
+                          alignItems={"center"}
+                          justifyContent={"space-between"}
+                          width={"100%"}
+                        >
+                          <Button
+                            sx={{
+                              "&:hover": {
+                                backgroundColor: "transparent",
+                              },
+                              color: "#0440de",
+                            }}
+                            disableRipple
+                            size="small"
+                            onClick={() => openProject(project)}
+                          >
+                            Open Project
+                          </Button>
+                          <IconButton
+                            disableRipple
+                            size="small"
+                            onClick={() => (
+                              setOpenDialog(true),
+                              setProjectDeletionId(project._id)
+                            )}
+                          >
+                            <DeleteOutlineIcon sx={{ color: "#ff0000" }} />
+                          </IconButton>
+                        </Box>
+                      </CardActions>
+                    </Card>
+                  </Box>
+                </Grid>
+              ))
+            ) : (
+              <Box
+                width="100%"
+                height={"100%"}
+                display={"flex"}
+                justifyContent="center"
+                alignItems={"center"}
+                flexDirection={"column"}
+              >
+                <img src={CreateProject} width={"360px"} height={"360px"} />
+                <Typography variant="h6" color="#0440de" fontFamily={"monospace"} ml={3}>No projects yet, Please create a new project.</Typography>
+              </Box>
+            )}
           </Grid>
         </Grid>
       </Grid>
       <ProjectForm open={open} onOpen={() => setOpen(false)} />
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        TransitionComponent={Transition}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Do you want to delete your project?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Your project and the code you have written will be permanently
+            deleted and you won't be able to recover it.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setOpenDialog(false)}
+            sx={{ bgcolor: "#000", color: "#fff" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            sx={{ bgcolor: "#ff0000", color: "#fff" }}
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

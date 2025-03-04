@@ -42,9 +42,6 @@ const ProjectForm = (props: formProps) => {
       case "cpp":
         initialCode = "// Write your C++ code here\n";
         break;
-      case "java":
-        initialCode = "// Write your java code here\n";
-        break;
       default:
         initialCode = "";
     }
@@ -142,8 +139,7 @@ const ProjectForm = (props: formProps) => {
                   <MenuItem value={"python"}>Python</MenuItem>
                   <MenuItem value={"javascript"}>Javascript</MenuItem>
                   <MenuItem value={"cpp"}>C++</MenuItem>
-                  <MenuItem value={"java"}>Java</MenuItem>
-                </Select>
+                  </Select>
               </Grid>
             </Grid>
           </Grid>
@@ -172,6 +168,7 @@ const ProjectForm = (props: formProps) => {
           disableRipple
           size="small"
           type="submit"
+          disabled={projectName === "" || description === "" || language === ""}
           onClick={handleSubmit}
         >
           Create Project

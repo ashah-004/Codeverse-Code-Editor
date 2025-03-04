@@ -1,10 +1,13 @@
 import {
+  Alert,
   AppBar,
   Box,
+  Button,
   Drawer,
   IconButton,
   LinearProgress,
   linearProgressClasses,
+  Snackbar,
   styled,
   Toolbar,
   Typography,
@@ -12,9 +15,9 @@ import {
 import Grid from "@mui/material/Grid2";
 import { useEffect, useRef, useState } from "react";
 import CodeIcon from "@mui/icons-material/Code";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import MonacoEditor from "react-monaco-editor";
 import PlayArrowOutlinedIcon from "@mui/icons-material/PlayArrowOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { Project } from "./project_dashboard";
@@ -24,15 +27,15 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
   borderRadius: 5,
   [`&.${linearProgressClasses.colorPrimary}`]: {
     backgroundColor: theme.palette.grey[600],
-    ...theme.applyStyles('dark', {
+    ...theme.applyStyles("dark", {
       backgroundColor: theme.palette.grey[600],
     }),
   },
   [`& .${linearProgressClasses.bar}`]: {
     borderRadius: 5,
-    backgroundColor: '#0440de',
-    ...theme.applyStyles('dark', {
-      backgroundColor: '#0440de',
+    backgroundColor: "#0440de",
+    ...theme.applyStyles("dark", {
+      backgroundColor: "#0440de",
     }),
   },
 }));
@@ -42,6 +45,8 @@ const Editor = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [output, setOutput] = useState<string>("");
   const [code, setCode] = useState<string>("");
+
+  const [alertOpen, setAlertOpen] = useState<boolean>(false);
 
   const editorRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -61,6 +66,22 @@ const Editor = () => {
       fetchProject(projectId);
     }
   }, [project, projectId]);
+
+  const handleSave = async () => {
+    if (!project) return;
+    try {
+      await axios.put(`http://localhost:8000/project/${projectId}/update`, {
+        project_name: project.project_name,
+        language: project.language,
+        description: project.description,
+        code: code,
+      });
+      setAlertOpen(true);
+    } catch (error: any) {
+      console.error("Error saving project", error.response || error.message);
+      alert("Failed to save project.");
+    }
+  };
 
   const handleRun = async () => {
     setOutput("loading");
@@ -104,11 +125,19 @@ const Editor = () => {
               cursor: "pointer",
             }}
           >
-            <CodeIcon fontSize="large" />
-            <Typography variant="h6">CodeVerse</Typography>
+            <ArrowBackIcon sx={{ color: "#fff" }} fontSize="medium" />
           </div>
+          <Button
+            disableRipple
+            variant="contained"
+            sx={{ bgcolor: "#0440de", mr: 3 }}
+            onClick={handleSave}
+          >
+            Save
+          </Button>
           <IconButton
             disableRipple
+            size="medium"
             sx={{ bgcolor: "#0440de", borderRadius: 2 }}
             onClick={() => handleRun()}
           >
@@ -118,7 +147,7 @@ const Editor = () => {
       </AppBar>
 
       {/* Drawer (Sidebar) */}
-      <Drawer
+      {/* <Drawer
         sx={{
           width: "15%",
           flexShrink: 0,
@@ -149,21 +178,22 @@ const Editor = () => {
             </Box>
           </Grid>
         </Grid>
-      </Drawer>
+      </Drawer> */}
 
       {/* Main Content */}
       <Box
-        marginLeft="15%" 
+        // marginLeft="15%"
         display="flex"
         flexDirection="column"
-        width="85%" 
-        height="calc(100vh - 64px)" 
+        width="100%"
+        mt={8}
+        height="calc(100vh - 64px)"
       >
         {/* Editor */}
         <Box flexBasis="60%" display="flex">
           <MonacoEditor
             ref={editorRef}
-            height="100%" 
+            height="100%"
             language="python"
             theme="vs-dark"
             options={{ selectOnLineNumbers: true }}
@@ -175,10 +205,10 @@ const Editor = () => {
         {/* Output */}
         <Box
           bgcolor="#100c08"
-          height="40%" 
+          height="40%"
           padding={1}
           sx={{
-            overflowY: "auto", 
+            overflowY: "auto",
           }}
         >
           <Grid container direction="column" spacing={2}>
@@ -199,7 +229,7 @@ const Editor = () => {
                 }}
               >
                 {output === "loading" ? (
-                  <BorderLinearProgress/>
+                  <BorderLinearProgress />
                 ) : output ? (
                   output
                 ) : (
@@ -210,6 +240,17 @@ const Editor = () => {
           </Grid>
         </Box>
       </Box>
+
+      <Snackbar open={alertOpen} autoHideDuration={6000} onClose={() => setAlertOpen(false)}>
+        <Alert
+          onClose={() => setAlertOpen(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          The code was saved successfully!
+        </Alert>
+      </Snackbar>
     </>
   );
 };
