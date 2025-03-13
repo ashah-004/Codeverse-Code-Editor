@@ -27,7 +27,7 @@ Assuming you have Docker, npm, Python 3, and Node installed on your system.
 
   ```sh
   cd app
-  npm install
+  npm install --legacy-peer-deps
   ```
 
 - **Run the client application**
@@ -44,12 +44,7 @@ Assuming you have Docker, npm, Python 3, and Node installed on your system.
   pip install -r requirements.txt
   ```
 
-- **Build the Docker image for the server**
-
-  ```sh
-  cd server
-  docker build -t codeverse-code-editor:latest .
-  ```
+- **Make sure that docker is up and running**
 
 - **Run the server using Docker**
 
