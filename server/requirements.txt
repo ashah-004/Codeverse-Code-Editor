@@ -29,7 +29,7 @@ Pygments==2.19.1
 pymongo==4.11.1
 python-dotenv==1.0.1
 python-multipart==0.0.20
-pywin32==308
+pywin32==308; sys_platform == "win32"
 PyYAML==6.0.2
 requests==2.32.3
 rich==13.9.4
