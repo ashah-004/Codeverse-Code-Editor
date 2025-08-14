@@ -33,7 +33,7 @@ def docker_path(path: str) -> str:
         return converted_path
 
 # MongoDB setup
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb+srv://ashah004:VVJTOGPUC685SIDT@project-infra-mongodb.z53hj7n.mongodb.net/?retryWrites=true&w=majority&appName=project-infra-mongodb")
 db = client["code_editor"]
 projects_collection = db["projects"]
 
