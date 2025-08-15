@@ -53,7 +53,7 @@ const Editor = () => {
 
   const fetchProject = async (id: string) => {
     try {
-      const response = await axios.get(`http://localhost:8000/project/${id}`);
+      const response = await axios.get(`/project/${id}`);
       setProject(response.data);
       setCode(response.data.code);
     } catch (error) {
@@ -70,7 +70,7 @@ const Editor = () => {
   const handleSave = async () => {
     if (!project) return;
     try {
-      await axios.put(`http://localhost:8000/project/${projectId}/update`, {
+      await axios.put(`/project/${projectId}/update`, {
         project_name: project.project_name,
         language: project.language,
         description: project.description,
@@ -87,7 +87,7 @@ const Editor = () => {
     setOutput("loading");
     if (!project) return;
     try {
-      const response = await axios.post("http://localhost:8000/run", {
+      const response = await axios.post("/run", {
         language: project.language,
         code: code,
       });
