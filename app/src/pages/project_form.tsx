@@ -48,7 +48,7 @@ const ProjectForm = (props: formProps) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/project/create",
+        "/project/create",
         {
           project_name: projectName,
           language: language,
