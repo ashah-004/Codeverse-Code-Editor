@@ -61,7 +61,7 @@ const ProjectDashboard = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/projects");
+      const response = await axios.get("/projects");
       setProjects(response.data.projects);
     } catch (error) {
       console.error("Error fetching projects", error);
@@ -73,7 +73,7 @@ const ProjectDashboard = () => {
 
     try {
       await axios.delete(
-        `http://localhost:8000/project/${projectDeletionId}/delete`
+        `/project/${projectDeletionId}/delete`
       );
       fetchProjects();
       setProjectDeletionId(null);
