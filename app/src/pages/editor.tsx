@@ -93,7 +93,7 @@ const Editor = () => {
       });
       setOutput(response.data.output);
 
-      await axios.put(`http://localhost:8000/project/${projectId}/update`, {
+      await axios.put(`/project/${projectId}/update`, {
         project_name: project.project_name,
         language: project.language,
         description: project.description,
