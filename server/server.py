@@ -127,54 +127,62 @@ def list_projects():
 
 # ==================== DOCKER EXECUTION ====================
 
-def run_code_in_docker(language, code):
+def run_code_in_docker(language: str, code: str):
     if language not in DOCKER_IMAGES:
-        return "Unsupported language"
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    
+    file_extension = FILE_EXTENSIONS[language]
 
-    # Create a temp file in /tmp (safe for docker mount)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=get_file_extension(language), dir="/tmp") as temp_file:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
         temp_file.write(code.encode())
         temp_file.flush()
         temp_filename = temp_file.name
-        temp_dir = os.path.dirname(temp_filename)
-        file_name = os.path.basename(temp_filename)
 
-    container_file = f"/code/{file_name}"
+    container_path = f"/code{file_extension}"
 
     try:
         if language == "python":
-            command = (
-                f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_dir}:/code {DOCKER_IMAGES[language]} "
-                f"python {container_file}"
+            # Use stdin to run code safely
+            command = [
+                "sudo", "-u", "backenduser",
+                "docker", "run", "--rm", "-i",
+                f"-v{temp_filename}:{container_path}",
+                DOCKER_IMAGES["python"],
+                "python"
+            ]
+            result = subprocess.run(
+                command,
+                input=code.encode(),   # feed code via stdin
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT
             )
+
         elif language == "cpp":
+            output_file = "/code/a.out"
             command = (
                 f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_dir}:/code {DOCKER_IMAGES[language]} "
-                f"bash -c \"g++ {container_file} -o /code/a.out && /code/a.out\""
+                f"-v {temp_filename}:{container_path} {DOCKER_IMAGES['cpp']} "
+                f'sh -c "g++ {container_path} -o {output_file} && {output_file}"'
             )
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=TIMEOUT)
+        
         elif language == "javascript":
             command = (
                 f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_dir}:/code {DOCKER_IMAGES[language]} "
-                f"node {container_file}"
+                f"-v {temp_filename}:{container_path} {DOCKER_IMAGES['javascript']} "
+                f"node {container_path}"
             )
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=TIMEOUT)
 
-        result = subprocess.run(
-            command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=10
-        )
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported language")
 
-        output = result.stdout.decode() + result.stderr.decode()
-        return output.strip() if output else "No output"
+        return result.stdout if result.returncode == 0 else result.stderr
+
     except subprocess.TimeoutExpired:
         return "Error: Execution timed out"
-    except Exception as e:
-        return f"Error: {str(e)}"
+
     finally:
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
