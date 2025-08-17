@@ -138,30 +138,27 @@ def run_code_in_docker(language: str, code: str):
         temp_file.flush()
         temp_filename = temp_file.name
 
-    if os.name == 'nt':
-        temp_filename = temp_filename.replace("\\", "/")
-        temp_filename = f"/{temp_filename[0]}{temp_filename[2:]}"  
+    container_path = f"/code{file_extension}"
 
     try:
         if language == "python":
             command = (
                 f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_filename}:{temp_filename} {DOCKER_IMAGES[language]} "
-                f"python {temp_filename}"
+                f"-v {temp_filename}:{container_path} {DOCKER_IMAGES[language]} "
+                f"python {container_path}"
             )
         elif language == "cpp":
-            output_file = temp_filename.replace(".cpp", "")
+            output_file = "/code/a.out"
             command = (
                 f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_filename}:{temp_filename} {DOCKER_IMAGES['cpp']} "
-                f'sh -c "g++ {temp_filename} -o {output_file} && {output_file}"'
+                f"-v {temp_filename}:{container_path} {DOCKER_IMAGES['cpp']} "
+                f'sh -c "g++ {container_path} -o {output_file} && {output_file}"'
             )
-        
         elif language == "javascript":
             command = (
                 f"docker run --rm --memory={MEMORY_LIMIT} --cpus={CPU_LIMIT} "
-                f"-v {temp_filename}:{temp_filename} {DOCKER_IMAGES[language]} "
-                f"node {temp_filename}"
+                f"-v {temp_filename}:{container_path} {DOCKER_IMAGES[language]} "
+                f"node {container_path}"
             )
         else:
             raise HTTPException(status_code=400, detail="Unsupported language")
@@ -173,6 +170,7 @@ def run_code_in_docker(language: str, code: str):
     finally:
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
+
 
 @app.post("/run")
 def execute_code(request: CodeRequest):
